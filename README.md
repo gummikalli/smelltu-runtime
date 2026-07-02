@@ -3,25 +3,49 @@
 Run the classroom on your own machine: follow the live presentation on your
 screen and get **your own sandbox shell** for the interactive parts.
 
-## Setup (once)
+## Setup (one command)
 
 Requirements: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-(or Docker Engine + Compose).
+(running) and git.
+
+**Mac / Linux / WSL:**
+
+```bash
+curl -fsSL https://courses.smelltuher.is/start | bash
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://courses.smelltuher.is/start.ps1 | iex
+```
+
+The installer asks for one thing: your **runtime token** (log in at
+<https://courses.smelltuher.is>, click **local runtime**, generate one). It
+generates the local passwords for you, starts everything, and prints your
+login. Re-run the same command any time to update.
+
+<details><summary>Manual setup (if you prefer)</summary>
 
 ```bash
 git clone https://github.com/gummikalli/smelltu-runtime.git
 cd smelltu-runtime
-cp .env.example .env
-# edit .env: paste your runtime token + choose two passwords (see the file)
+cp .env.example .env   # paste your runtime token + choose two passwords
 docker compose up -d
 ```
 
-Open <http://localhost:3000> and log in with `student@localhost.local` and the
-`LOCAL_USER_PASSWORD` you chose.
+Open <http://localhost:3000> and log in with `student@localhost.local` and
+your `LOCAL_USER_PASSWORD`.
+</details>
 
-Your runtime token comes from the course site: log in at
-<https://courses.smelltuher.is>, click **local runtime**, generate a token,
-paste it into `.env`.
+## AI in the sandbox (Claude Code)
+
+Your sandbox shell ships with **Claude Code** (`claude`). By default it uses
+the **classroom AI** — the instructor's Anthropic access, proxied through the
+course server using your runtime token (a daily budget applies; the
+instructor's key never reaches your machine). If you have your own Anthropic
+account, put `ANTHROPIC_API_KEY=sk-ant-...` in `.env` and restart — your key
+is then used directly and the classroom budget doesn't apply.
 
 ## During class
 
