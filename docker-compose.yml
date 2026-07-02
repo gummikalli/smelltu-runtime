@@ -1,0 +1,105 @@
+# Smelltu student local runtime.
+#
+#   1. cp .env.example .env   → paste your runtime token + pick passwords
+#   2. docker compose up -d
+#   3. open http://localhost:3000 and log in with your LOCAL_USER_* values
+#
+# Prebuilt images — nothing is compiled on your machine. The stack follows
+# the live cloud presentation (read-only) and gives you your OWN sandbox
+# shell for the interactive parts. Your runtime token can never present or
+# type into the classroom shell.
+name: smelltu-runtime
+
+services:
+  app:
+    image: ghcr.io/gummikalli/smelltu-app:latest
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      RUNTIME_MODE: student
+      DATABASE_URL: postgres://smelltu:${POSTGRES_PASSWORD:?set in .env}@db:5432/smelltu
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+      SYNC_PUBLIC_ORIGIN: ${SYNC_PUBLIC_ORIGIN:-ws://localhost:3001}
+    depends_on:
+      db:
+        condition: service_healthy
+      init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # migrations + local account + course pull from the cloud, then exits
+  init:
+    image: ghcr.io/gummikalli/smelltu-migrate:latest
+    command: ["sh", "-c", "npx drizzle-kit migrate && npx tsx scripts/runtime-init.ts"]
+    environment:
+      DATABASE_URL: postgres://smelltu:${POSTGRES_PASSWORD:?set in .env}@db:5432/smelltu
+      CLOUD_API_URL: ${CLOUD_API_URL:-https://courses.smelltuher.is}
+      RUNTIME_TOKEN: ${RUNTIME_TOKEN:?generate one at /runtime on the course site}
+      COURSE_SLUG: ${COURSE_SLUG:-vibe-coding}
+      LOCAL_USER_EMAIL: ${LOCAL_USER_EMAIL:-student@localhost.local}
+      LOCAL_USER_PASSWORD: ${LOCAL_USER_PASSWORD:?set in .env (min 12 chars)}
+      LOCAL_USER_NAME: ${LOCAL_USER_NAME:-Student}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # local sync hub + bridge: follows the cloud presenter with your token
+  sync:
+    image: ghcr.io/gummikalli/smelltu-sync:latest
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgres://smelltu:${POSTGRES_PASSWORD:?set in .env}@db:5432/smelltu
+      PLAYGROUND_URL: ws://playground:3002
+      CLOUD_API_URL: ${CLOUD_API_URL:-https://courses.smelltuher.is}
+      CLOUD_SYNC_URL: ${CLOUD_SYNC_URL:-wss://courses.smelltuher.is/sync}
+      RUNTIME_TOKEN: ${RUNTIME_TOKEN:?generate one at /runtime on the course site}
+      COURSE_SLUG: ${COURSE_SLUG:-vibe-coding}
+    networks:
+      - default
+      - sandbox
+    depends_on:
+      db:
+        condition: service_healthy
+      init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # YOUR sandbox shell: internal-only network, non-root, no capabilities,
+  # no volumes, no secrets — same isolation posture as the classroom demo.
+  playground:
+    image: ghcr.io/gummikalli/smelltu-playground:latest
+    networks:
+      - sandbox
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    pids_limit: 128
+    restart: unless-stopped
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: smelltu
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: smelltu
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smelltu -d smelltu"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+networks:
+  default:
+  sandbox:
+    internal: true
