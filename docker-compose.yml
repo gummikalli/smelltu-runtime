@@ -96,6 +96,10 @@ services:
       # classroom AI via the cloud proxy — your runtime token, never the
       # instructor's key. Set ANTHROPIC_API_KEY in .env to use your own
       # account instead (it wins; proxy vars are then dropped).
+      # AI_MODE (set by the installer): classroom = proxy via runtime token,
+      # subscription = student's own Claude login (no vars injected),
+      # apikey = student's own ANTHROPIC_API_KEY
+      AI_MODE: ${AI_MODE:-classroom}
       ANTHROPIC_BASE_URL: ${CLOUD_API_URL:-https://courses.smelltuher.is}/api/ai
       ANTHROPIC_AUTH_TOKEN: ${RUNTIME_TOKEN:?generate one at /runtime on the course site}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}

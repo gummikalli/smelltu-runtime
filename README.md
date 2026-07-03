@@ -40,12 +40,19 @@ your `LOCAL_USER_PASSWORD`.
 
 ## AI in the sandbox (Claude Code)
 
-Your sandbox shell ships with **Claude Code** (`claude`). By default it uses
-the **classroom AI** — the instructor's Anthropic access, proxied through the
-course server using your runtime token (a daily budget applies; the
-instructor's key never reaches your machine). If you have your own Anthropic
-account, put `ANTHROPIC_API_KEY=sk-ant-...` in `.env` and restart — your key
-is then used directly and the classroom budget doesn't apply.
+Your sandbox shell ships with **Claude Code** (`claude`). The installer asks
+how it should connect:
+
+1. **classroom AI** (default) — the instructor's Anthropic access, proxied
+   through the course server using your runtime token (a daily budget
+   applies; the instructor's key never reaches your machine).
+2. **your Claude account** — type `claude` in the sandbox and log in once
+   with your own subscription (Pro/Max); the login is remembered.
+3. **your own API key** — pay-as-you-go; the installer validates the key
+   before accepting it.
+
+Picked wrong? Re-run the start one-liner — it asks again (Enter keeps your
+current choice).
 
 ## Viewing what you build
 
