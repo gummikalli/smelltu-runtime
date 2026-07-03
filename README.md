@@ -80,9 +80,21 @@ docker compose pull       # update to the newest images
 
 ## Troubleshooting
 
+First move for ANY problem: **re-run the start one-liner.** It updates
+everything, checks ports, diagnoses the common failures and repairs them.
+
+- **"Port 3000/3001/8080 is already in use"** — another program has the port.
+  Close it, or add `APP_PORT=` / `SYNC_PORT=` / `PREVIEW_PORT=` with a free
+  port to `.env` and re-run.
+- **`init` mentions SMELLTU_DB_AUTH_MISMATCH** — your `.env` was regenerated
+  but the old database volume remains. The start script fixes this
+  automatically; manually: `docker compose down && docker volume rm
+  smelltu-runtime_pgdata && docker compose up -d` (sandbox files are kept).
 - **"RUNTIME_TOKEN … generate one at /runtime"** — the `.env` value is
   missing. Paste the full `smrt_…` token.
 - **`init` fails with 401** — your token expired or was revoked; generate a
   new one on the course site and `docker compose up -d` again.
 - **Not following the presentation** — tokens are personal and time-limited;
   check `docker compose logs sync` for `bridge:` lines.
+- **Nuclear option** — `docker compose down -v` then re-run the installer.
+  Wipes local progress and sandbox files; the course re-downloads.

@@ -14,13 +14,14 @@ services:
   app:
     image: ghcr.io/gummikalli/smelltu-app:latest
     ports:
-      - "3000:3000"
+      # set APP_PORT in .env if 3000 is taken on your machine
+      - "${APP_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
       RUNTIME_MODE: student
       DATABASE_URL: postgres://smelltu:${POSTGRES_PASSWORD:?set in .env}@db:5432/smelltu
-      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
-      SYNC_PUBLIC_ORIGIN: ${SYNC_PUBLIC_ORIGIN:-ws://localhost:3001}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:${APP_PORT:-3000}}
+      SYNC_PUBLIC_ORIGIN: ${SYNC_PUBLIC_ORIGIN:-ws://localhost:${SYNC_PORT:-3001}}
     depends_on:
       db:
         condition: service_healthy
@@ -31,7 +32,18 @@ services:
   # migrations + local account + course pull from the cloud, then exits
   init:
     image: ghcr.io/gummikalli/smelltu-migrate:latest
-    command: ["sh", "-c", "npx drizzle-kit migrate && npx tsx scripts/runtime-init.ts"]
+    # preflight catches the classic silent failure (stale pgdata volume with a
+    # different password than .env) and prints a marker the start scripts
+    # auto-heal on; each step announces itself so failures are attributable
+    command:
+      - sh
+      - -c
+      - >-
+        npx tsx scripts/db-preflight.ts &&
+        echo '[init] applying database migrations ...' &&
+        npx drizzle-kit migrate &&
+        echo '[init] pulling course content + creating your local account ...' &&
+        npx tsx scripts/runtime-init.ts
     environment:
       DATABASE_URL: postgres://smelltu:${POSTGRES_PASSWORD:?set in .env}@db:5432/smelltu
       CLOUD_API_URL: ${CLOUD_API_URL:-https://courses.smelltuher.is}
@@ -48,7 +60,8 @@ services:
   sync:
     image: ghcr.io/gummikalli/smelltu-sync:latest
     ports:
-      - "3001:3001"
+      # set SYNC_PORT in .env if 3001 is taken on your machine
+      - "${SYNC_PORT:-3001}:3001"
     environment:
       DATABASE_URL: postgres://smelltu:${POSTGRES_PASSWORD:?set in .env}@db:5432/smelltu
       PLAYGROUND_URL: ws://playground:3002
@@ -73,8 +86,9 @@ services:
     image: ghcr.io/gummikalli/smelltu-playground:latest
     ports:
       # view your vibe-coded app at http://localhost:8080 (start it with
-      # `preview npm run dev` inside the shell)
-      - "8080:8080"
+      # `preview npm run dev` inside the shell); set PREVIEW_PORT in .env
+      # if 8080 is taken on your machine
+      - "${PREVIEW_PORT:-8080}:8080"
     networks:
       - default # egress: Claude Code / npm / git
       - sandbox # internal link from the sync PTY bridge
