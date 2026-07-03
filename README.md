@@ -47,6 +47,18 @@ instructor's key never reaches your machine). If you have your own Anthropic
 account, put `ANTHROPIC_API_KEY=sk-ant-...` in `.env` and restart — your key
 is then used directly and the classroom budget doesn't apply.
 
+## Viewing what you build
+
+Start your app with the `preview` helper in the sandbox shell:
+
+```
+preview npm run dev
+```
+
+Then open **http://localhost:8080** — that's your app, running in your
+sandbox. Works with any framework that listens on a port (`preview` binds it
+to `0.0.0.0:8080` for you). One app at a time.
+
 ## During class
 
 - Your local pages **follow the teacher** automatically (`● LIVE (cloud)`).

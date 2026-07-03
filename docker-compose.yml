@@ -71,6 +71,10 @@ services:
   # and git work for the exercises. It's your machine; the box protects it.
   playground:
     image: ghcr.io/gummikalli/smelltu-playground:latest
+    ports:
+      # view your vibe-coded app at http://localhost:8080 (start it with
+      # `preview npm run dev` inside the shell)
+      - "8080:8080"
     networks:
       - default # egress: Claude Code / npm / git
       - sandbox # internal link from the sync PTY bridge
