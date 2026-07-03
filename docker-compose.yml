@@ -82,6 +82,10 @@ services:
       ANTHROPIC_AUTH_TOKEN: ${RUNTIME_TOKEN:?generate one at /runtime on the course site}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+    volumes:
+      # persistent sandbox home: claude login/settings and files survive
+      # restarts AND deployments; admin can wipe it (reset sandbox)
+      - playground_home:/home/node
     cap_drop:
       - ALL
     security_opt:
@@ -108,6 +112,7 @@ services:
 
 volumes:
   pgdata:
+  playground_home:
 
 networks:
   default:
